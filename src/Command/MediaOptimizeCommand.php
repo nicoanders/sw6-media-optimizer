@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace RuneLaenen\MediaOptimizer\Command;
 
 use Shopware\Core\Content\Media\MediaEntity;
-use Shopware\Core\Content\Media\Pathname\UrlGeneratorInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Spatie\ImageOptimizer\OptimizerChain;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\Table;
@@ -19,12 +19,16 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(
+    name: 'rl:media:optimize',
+    description: 'Optimize media files',
+)]
 class MediaOptimizeCommand extends Command
 {
     protected static $defaultName = 'rl:media:optimize';
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $mediaRepository;
 
@@ -49,25 +53,18 @@ class MediaOptimizeCommand extends Command
     private $sizePost = 0;
 
     /**
-     * @var UrlGeneratorInterface
-     */
-    private $urlGenerator;
-
-    /**
      * @var string
      */
     private $projectDir;
 
     public function __construct(
-        EntityRepositoryInterface $mediaRepository,
+        EntityRepository $mediaRepository,
         OptimizerChain $optimizerChain,
-        UrlGeneratorInterface $urlGenerator,
         string $projectDir
     ) {
         parent::__construct();
         $this->mediaRepository = $mediaRepository;
         $this->optimizerChain = $optimizerChain;
-        $this->urlGenerator = $urlGenerator;
         $this->projectDir = $projectDir;
     }
 
@@ -157,7 +154,7 @@ class MediaOptimizeCommand extends Command
 
     private function optimize(MediaEntity $media): void
     {
-        $mediaLocation = $this->projectDir . '/public/' . $this->urlGenerator->getRelativeMediaUrl($media);
+        $mediaLocation = $this->projectDir . '/public/' . $media->getPath();
         if (!file_exists($mediaLocation)) {
             return;
         }
